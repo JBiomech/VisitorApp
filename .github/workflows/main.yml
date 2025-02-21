@@ -33,17 +33,29 @@ jobs:
         run: |
           git clone https://github.com/kivy/kivy-ios.git
 
-      # ✅ Build Python3 FIRST before anything else
+      # ✅ Clean previous builds (ensures a fresh build)
+      - name: Clean Kivy iOS Build Directory
+        run: |
+          cd kivy-ios
+          rm -rf dist build
+          mkdir -p dist build
+          ls -la dist  # Debug: Check if clean
+
+      # ✅ Build Python3 for iOS with debug logs
       - name: Build Python3 for iOS
         run: |
           cd kivy-ios
-          python3 toolchain.py build python3
+          python3 toolchain.py build python3 --debug
+          echo "Listing contents of kivy-ios/dist after Python3 build:"
+          ls -la dist  # Debugging: Check if python3 is present
 
+      # ✅ Verify Python3 Recipe is Compiled
       - name: Verify Python3 Recipe is Compiled
         run: |
           if [ ! -d "kivy-ios/dist/python3" ]; then
             echo "❌ ERROR: Python3 was not compiled successfully!"
             ls -la kivy-ios/dist  # Show contents of dist folder
+            echo "⚠️ Possible Fix: Check for missing dependencies in the build logs above."
             exit 1
           else
             echo "✅ Python3 recipe is successfully compiled."
@@ -52,7 +64,7 @@ jobs:
       - name: Build Kivy iOS dependencies
         run: |
           cd kivy-ios
-          python3 toolchain.py build kivy
+          python3 toolchain.py build kivy --debug
 
       - name: Create iOS project
         run: |

@@ -36,7 +36,7 @@ jobs:
         run: |
           source $HOME/kivy_venv/bin/activate
 
-          # Install missing dependencies
+          # Ensure system dependencies are installed
           brew install autoconf automake libtool
 
           # Verify Kivy-iOS installation path
@@ -52,26 +52,17 @@ jobs:
           fi
           cd myapp
 
-          # **Fix: Explicitly build Python first before anything else**
-          python3 $TOOLCHAIN_PATH build python3
+          # ✅ Fix: Ensure Python3 is built before proceeding
+          python3 $TOOLCHAIN_PATH build python3 --dir .
 
-          # Check if Python3 was built successfully
-          if [ ! -d "$KIVY_IOS_PATH/recipes/python3" ]; then
-            echo "❌ Error: Python3 recipe was not compiled!"
-            exit 1
-          fi
+          # ✅ Fix: Ensure Kivy is built before building the app
+          python3 $TOOLCHAIN_PATH build kivy --dir .
 
-          # **Fix: Ensure Kivy is built before attempting app build**
-          python3 $TOOLCHAIN_PATH build kivy
+          # ✅ Fix: Ensure myapp recipe is created before building
+          python3 $TOOLCHAIN_PATH recipes --create myapp
 
-          # **Fix: Ensure myapp exists before building**
-          if [ ! -d "$KIVY_IOS_PATH/recipes/myapp" ]; then
-            echo "❌ Error: myapp recipe does not exist!"
-            exit 1
-          fi
-
-          # Now build the actual app
-          python3 $TOOLCHAIN_PATH build myapp
+          # ✅ Now build the actual app
+          python3 $TOOLCHAIN_PATH build myapp --dir .
 
       - name: Export IPA File
         run: |

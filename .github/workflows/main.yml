@@ -44,7 +44,7 @@ jobs:
           fi
 
           # Build Python recipe first (necessary for Kivy and app builds)
-          python3 $TOOLCHAIN_PATH build python3 --dir .
+          python3 $TOOLCHAIN_PATH build python3
 
       - name: Create and Build iOS App
         run: |
@@ -57,8 +57,8 @@ jobs:
           cd myapp
 
           # Build Kivy and the App after Python is compiled
-          python3 $TOOLCHAIN_PATH build kivy --dir .
-          python3 $TOOLCHAIN_PATH build myapp --dir .
+          python3 $TOOLCHAIN_PATH build kivy
+          python3 $TOOLCHAIN_PATH build myapp
 
       - name: Export IPA File
         run: |

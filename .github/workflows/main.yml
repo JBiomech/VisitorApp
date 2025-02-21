@@ -39,6 +39,15 @@ jobs:
             echo "✅ Kivy-iOS is installed at: $KIVY_IOS_PATH"
           fi
 
+          # Debug: Ensure toolchain.py exists
+          TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
+          if [ ! -f "$TOOLCHAIN_PATH" ]; then
+            echo "❌ ERROR: toolchain.py not found at $TOOLCHAIN_PATH"
+            exit 1
+          else
+            echo "✅ Found toolchain.py at: $TOOLCHAIN_PATH"
+          fi
+
           # Add kivy-ios to PATH and persist across steps
           echo "export PATH=$KIVY_IOS_PATH:\$PATH" >> $HOME/.bashrc
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
@@ -50,7 +59,7 @@ jobs:
           # Ensure kivy-ios is installed
           python3 -m pip show kivy-ios || { echo "❌ kivy-ios is missing!"; exit 1; }
 
-          # Locate toolchain.py
+          # Ensure toolchain.py is available
           TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
           if [ ! -f "$TOOLCHAIN_PATH" ]; then
             echo "❌ ERROR: toolchain.py not found at $TOOLCHAIN_PATH"
@@ -74,7 +83,7 @@ jobs:
           python3 $TOOLCHAIN_PATH build myapp
 
         env:
-          KIVY_IOS_PATH: /Users/runner/kivy_venv/lib/python3.13/site-packages/kivy_ios
+          KIVY_IOS_PATH: ${{ env.KIVY_IOS_PATH }}
 
       - name: 📦 Package IPA File
         run: |

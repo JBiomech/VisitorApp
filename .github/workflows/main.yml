@@ -12,14 +12,15 @@ jobs:
       - name: Set up Python Environment
         run: |
           brew install python3
-          python3 -m venv kivy_venv  # Create a virtual environment
-          source kivy_venv/bin/activate  # Activate the virtual environment
-          python3 -m pip install --upgrade pip  # Upgrade pip inside venv
-          python3 -m pip install kivy kivy-ios  # Install dependencies
+          python3 -m venv $HOME/kivy_venv  # Create a virtual environment
+          echo "source $HOME/kivy_venv/bin/activate" >> $GITHUB_ENV  # Persist activation
+          source $HOME/kivy_venv/bin/activate
+          python3 -m pip install --upgrade pip
+          python3 -m pip install kivy kivy-ios  # Install kivy-ios globally
 
       - name: Build iOS App
         run: |
-          source kivy_venv/bin/activate  # Ensure virtual environment is used
+          source $HOME/kivy_venv/bin/activate  # Ensure venv is activated
           kivy-ios create myapp
           cd myapp
           TOOLCHAIN=toolchain.py
@@ -28,7 +29,7 @@ jobs:
 
       - name: Export IPA File
         run: |
-          source kivy_venv/bin/activate
+          source $HOME/kivy_venv/bin/activate
           cd myapp
           python3 $TOOLCHAIN package myapp
 

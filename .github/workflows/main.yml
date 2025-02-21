@@ -41,20 +41,20 @@ jobs:
           mkdir -p dist build
           ls -la dist  # Debug: Check if clean
 
-      # ✅ Build Python3 for iOS and log output
+      # ✅ Build Python3 for iOS and capture full logs
       - name: Build Python3 for iOS
         run: |
           cd kivy-ios
-          python3 toolchain.py build python3 | tee python3_build_log.txt
+          python3 toolchain.py build python3 2>&1 | tee python3_build_log.txt
           echo "Listing contents of kivy-ios/dist after Python3 build:"
           ls -la dist  # Debugging: Check if python3 is present
 
-      # ✅ Capture and show Python3 build log
+      # ✅ Show Python3 Build Log if it fails
       - name: Show Python3 Build Log (if failed)
         if: failure()
         run: |
           echo "⚠️ Python3 build failed! Showing last 100 lines of log:"
-          tail -n 100 kivy-ios/python3_build_log.txt
+          tail -n 100 kivy-ios/python3_build_log.txt || echo "❌ Log file not found"
 
       # ✅ Verify Python3 Recipe is Compiled
       - name: Verify Python3 Recipe is Compiled
@@ -70,14 +70,14 @@ jobs:
       - name: Build Kivy iOS dependencies
         run: |
           cd kivy-ios
-          python3 toolchain.py build kivy | tee kivy_build_log.txt
+          python3 toolchain.py build kivy 2>&1 | tee kivy_build_log.txt
 
       # ✅ Show Kivy Build Log if it fails
       - name: Show Kivy Build Log (if failed)
         if: failure()
         run: |
           echo "⚠️ Kivy build failed! Showing last 100 lines of log:"
-          tail -n 100 kivy-ios/kivy_build_log.txt
+          tail -n 100 kivy-ios/kivy_build_log.txt || echo "❌ Log file not found"
 
       - name: Create iOS project
         run: |
@@ -113,3 +113,4 @@ jobs:
         with:
           name: visitor-app-ios
           path: kivy-ios/app-ios/output
+

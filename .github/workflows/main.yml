@@ -31,12 +31,12 @@ jobs:
           brew list | grep -E "autoconf|automake|libtool"
           python3 -m pip list | grep -E "cython|kivy-ios"
 
-      - name: **Force Build Python3 Before Anything Else**
+      - name: Force Build Python3 Before Anything Else
         run: |
           cd kivy-ios
           python3 toolchain.py build python3
           
-      - name: **Check if Python3 Compiled**
+      - name: Check if Python3 Compiled
         run: |
           if [ ! -d "kivy-ios/dist/python3" ]; then
             echo "❌ ERROR: Python3 was not compiled successfully!"
@@ -46,17 +46,17 @@ jobs:
             echo "✅ Python3 compiled successfully."
           fi
 
-      - name: **Build Kivy iOS Dependencies**
+      - name: Build Kivy iOS Dependencies
         run: |
           cd kivy-ios
           python3 toolchain.py build kivy
 
-      - name: **Create iOS Project**
+      - name: Create iOS Project
         run: |
           cd kivy-ios
           python3 toolchain.py create visitor_app
 
-      - name: **Compile App for iOS**
+      - name: Compile App for iOS
         run: |
           if [ ! -d "kivy-ios/app-ios" ]; then
             echo "❌ ERROR: app-ios is missing!"
@@ -66,7 +66,7 @@ jobs:
           cd kivy-ios/app-ios
           xcodebuild -project visitor_app.xcodeproj -scheme visitor_app -sdk iphonesimulator
 
-      - name: **Upload Build Artifacts**
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: visitor_app_ios

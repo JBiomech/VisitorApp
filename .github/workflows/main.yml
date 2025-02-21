@@ -51,9 +51,12 @@ jobs:
             exit 1
           fi
 
-          # Create project directory properly
-          python3 $TOOLCHAIN_PATH create myapp
-          cd myapp
+          # ✅ Ensure app directory exists and create inside the working directory
+          mkdir -p $HOME/myapp
+          cd $HOME/myapp
+
+          # 🔧 Fix: Provide the correct directory argument
+          python3 $TOOLCHAIN_PATH create myapp $HOME/myapp
 
           # Build dependencies and app
           python3 $TOOLCHAIN_PATH build python3
@@ -66,11 +69,11 @@ jobs:
       - name: 📦 Package IPA File
         run: |
           source $HOME/kivy_venv/bin/activate
-          cd myapp
+          cd $HOME/myapp
           python3 $KIVY_IOS_PATH/toolchain.py package myapp
 
       - name: 📤 Upload IPA File
         uses: actions/upload-artifact@v4
         with:
           name: kivy-ios-app
-          path: myapp/bin/*.ipa
+          path: $HOME/myapp/bin/*.ipa

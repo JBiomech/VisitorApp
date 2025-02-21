@@ -68,9 +68,14 @@ jobs:
             echo "✅ Kivy recipe already built. Skipping Kivy build."
           fi
 
-          # Build the app
-          echo "❌ Building the app."
-          python3 $KIVY_IOS_PATH/toolchain.py build myapp myapp
+          # Build the app if it is not already built
+          if [ ! -f ".myapp-built" ]; then
+            echo "❌ App build not found. Building app."
+            python3 $KIVY_IOS_PATH/toolchain.py build myapp myapp
+            touch .myapp-built # Mark app build as completed
+          else
+            echo "✅ App already built. Skipping app build."
+          fi
 
       - name: Export IPA File
         run: |

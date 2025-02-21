@@ -1,126 +1,74 @@
-name: iOS Build (No Mac Needed)
+name: Build iOS
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-ios:
-    runs-on: macos-latest
-
+    runs-on: macos-latest  # Ensure macOS runner
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      # ✅ Install required macOS dependencies
-      - name: Install Required Build Tools
+      - name: Install Dependencies
         run: |
           brew install autoconf automake libtool
-          brew install pkg-config libffi
+          python3 -m pip install --upgrade pip setuptools wheel cython
+          python3 -m pip install kivy-ios
 
-      # ✅ Install required Python packages
-      - name: Install Python Dependencies
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          pip3 install Cython kivy kivy-ios sh
-
-      - name: Clone Kivy iOS Repository
+      - name: Clone Kivy iOS
         run: |
           git clone https://github.com/kivy/kivy-ios.git
           cd kivy-ios
-          git checkout master
 
-      # ✅ Force clean build (ensures a fresh start)
-      - name: Clean Previous Build Artifacts
+      - name: Verify Dependencies Installed
+        run: |
+          brew list | grep -E "autoconf|automake|libtool"
+          python3 -m pip list | grep -E "cython|kivy-ios"
+
+      - name: **Force Build Python3 Before Anything Else**
         run: |
           cd kivy-ios
-          rm -rf dist build
-          mkdir -p dist build
-          ls -la dist  # Debug: Check if clean
-
-      # ✅ Build Python3 for iOS
-      - name: Build Python3 for iOS
-        run: |
-          cd kivy-ios
-          python3 toolchain.py build python3 | tee python3_build_log.txt
-          echo "Checking if Python3 compiled successfully..."
-          ls -la dist  # Verify Python3 was built
-
-      # ✅ Upload logs if Python3 build fails
-      - name: Upload Python3 Build Logs (if failed)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: python3-build-log
-          path: kivy-ios/python3_build_log.txt
-
-      # ✅ Verify Python3 Recipe is Compiled
-      - name: Verify Python3 Compilation
+          python3 toolchain.py build python3
+          
+      - name: **Check if Python3 Compiled**
         run: |
           if [ ! -d "kivy-ios/dist/python3" ]; then
             echo "❌ ERROR: Python3 was not compiled successfully!"
-            ls -la kivy-ios/dist  # Show contents of dist folder
+            ls -la kivy-ios/dist  # Show contents for debugging
             exit 1
           else
             echo "✅ Python3 compiled successfully."
           fi
 
-      # ✅ Build Kivy iOS dependencies
-      - name: Build Kivy iOS dependencies
+      - name: **Build Kivy iOS Dependencies**
         run: |
           cd kivy-ios
-          python3 toolchain.py build kivy | tee kivy_build_log.txt
+          python3 toolchain.py build kivy
 
-      # ✅ Upload logs if Kivy build fails
-      - name: Upload Kivy Build Logs (if failed)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: kivy-build-log
-          path: kivy-ios/kivy_build_log.txt
-
-      # ✅ Create iOS project
-      - name: Create iOS project
+      - name: **Create iOS Project**
         run: |
           cd kivy-ios
-          python3 toolchain.py create visitor_app org.example.visitorapp
-          echo "Checking directory structure after create..."
-          ls -la  # Debugging: See if visitor_app-ios exists
+          python3 toolchain.py create visitor_app
 
-      # ✅ Verify iOS project directory
-      - name: Verify iOS project directory
+      - name: **Compile App for iOS**
         run: |
-          if [ -d "kivy-ios/visitor_app-ios" ]; then
-            echo "✅ visitor_app-ios exists, renaming to app-ios..."
-            mv kivy-ios/visitor_app-ios kivy-ios/app-ios
-          else
-            echo "❌ ERROR: visitor_app-ios is missing! Build cannot continue."
-            ls -la kivy-ios  # Show what's inside kivy-ios
+          if [ ! -d "kivy-ios/app-ios" ]; then
+            echo "❌ ERROR: app-ios is missing!"
+            ls -la kivy-ios  # Show contents for debugging
             exit 1
           fi
-
-      # ✅ Compile App for iOS
-      - name: Compile App for iOS
-        run: |
           cd kivy-ios/app-ios
-          python3 toolchain.py build myapp
+          xcodebuild -project visitor_app.xcodeproj -scheme visitor_app -sdk iphonesimulator
 
-      # ✅ Package iOS app
-      - name: Package iOS app
-        run: |
-          cd kivy-ios/app-ios
-          mkdir -p output
-          mv build/myapp.app output/
-
-      # ✅ Upload Final iOS Build
-      - name: Upload iOS build
+      - name: **Upload Build Artifacts**
         uses: actions/upload-artifact@v4
         with:
-          name: visitor-app-ios
-          path: kivy-ios/app-ios/output
+          name: visitor_app_ios
+          path: kivy-ios/app-ios/build
+          retention-days: 7

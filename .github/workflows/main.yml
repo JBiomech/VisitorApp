@@ -25,7 +25,7 @@ jobs:
 
           # Debugging: Ensure kivy-ios is found
           if [ ! -d "$KIVY_IOS_PATH" ]; then
-            echo "ERROR: kivy-ios installation path is invalid: $KIVY_IOS_PATH"
+            echo "❌ ERROR: kivy-ios installation path is invalid: $KIVY_IOS_PATH"
             exit 1
           else
             echo "✅ Kivy-iOS is installed at: $KIVY_IOS_PATH"
@@ -38,9 +38,9 @@ jobs:
       - name: Build iOS App
         run: |
           source $HOME/kivy_venv/bin/activate
-          kivy-ios create myapp
+          python3 -m kivy_ios.toolchain create myapp
           cd myapp
-          TOOLCHAIN=toolchain.py
+          TOOLCHAIN=$KIVY_IOS_PATH/toolchain.py
           python3 $TOOLCHAIN build python3 kivy
           python3 $TOOLCHAIN build myapp
 

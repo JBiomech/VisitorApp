@@ -1,4 +1,4 @@
-name: Build Kivy iOS App
+name: iOS Build (No Mac Needed)
 
 on:
   push:
@@ -6,14 +6,19 @@ on:
       - main
 
 jobs:
-  build-ios:
-    runs-on: macos-latest
+  build:
+    runs-on: macos-latest  # GitHub provides a Mac VM for free
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Kivy and dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
           pip3 install Cython kivy kivy-ios
@@ -24,20 +29,26 @@ jobs:
           cd kivy-ios
           python3 toolchain.py build python3 kivy
 
-      - name: Create Xcode project
+      - name: Create iOS project
         run: |
           cd kivy-ios
-          python3 toolchain.py create myapp org.example.myapp
+          python3 toolchain.py create visitor_app org.example.visitorapp
           cd app-ios
           mv ../../main.py .
 
-      - name: Build Xcode project
+      - name: Compile App for iOS
         run: |
           cd kivy-ios/app-ios
-          xcodebuild -project myapp.xcodeproj -scheme myapp -destination 'generic/platform=iOS' build
+          python3 toolchain.py build myapp
 
-      - name: Upload build artifacts
+      - name: Package iOS app
+        run: |
+          cd kivy-ios/app-ios
+          mkdir -p output
+          mv build/myapp.app output/
+
+      - name: Upload iOS build
         uses: actions/upload-artifact@v3
         with:
           name: visitor-app-ios
-          path: kivy-ios/app-ios/build
+          path: kivy-ios/app-ios/output

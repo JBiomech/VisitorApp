@@ -46,20 +46,30 @@ jobs:
             exit 1
           fi
 
+          # Check if the app has already been created
+          if [ ! -d "myapp" ]; then
+            echo "❌ App not found. Creating app."
+            python3 $TOOLCHAIN_PATH create myapp ./myapp
+          else
+            echo "✅ App already exists. Skipping creation."
+          fi
+
+          cd myapp
+
           # Check if Python build exists, if not, build it
-          if [ ! -f "myapp/.python3-built" ]; then
+          if [ ! -f ".python3-built" ]; then
             echo "❌ Python build not found. Building Python recipe."
             python3 $TOOLCHAIN_PATH build python3 myapp
-            touch myapp/.python3-built # Mark Python build as completed
+            touch .python3-built # Mark Python build as completed
           else
             echo "✅ Python recipe already built. Skipping Python build."
           fi
 
-          # Build Kivy if not built already
-          if [ ! -f "myapp/.kivy-built" ]; then
+          # Check if Kivy build exists, if not, build it
+          if [ ! -f ".kivy-built" ]; then
             echo "❌ Kivy build not found. Building Kivy recipe."
             python3 $TOOLCHAIN_PATH build kivy myapp
-            touch myapp/.kivy-built # Mark Kivy build as completed
+            touch .kivy-built # Mark Kivy build as completed
           else
             echo "✅ Kivy recipe already built. Skipping Kivy build."
           fi

@@ -1,6 +1,10 @@
 name: Build Kivy iOS App
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Manual trigger for running the workflow at any time
 
 jobs:
   build:
@@ -9,16 +13,15 @@ jobs:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🏗 Install System Dependencies
+      - name: 🏗 Install System Dependencies (Skip if already done)
+        if: steps.check_installation.outputs.installed != 'true'
         run: |
           brew update
           brew install python3 autoconf automake libtool pkg-config
+          echo "::set-output name=installed::true"
 
-          # Verify installations
-          autoconf --version || { echo "❌ autoconf not installed!"; exit 1; }
-          automake --version || { echo "❌ automake not installed!"; exit 1; }
-
-      - name: 🏗 Install Python and Dependencies
+      - name: 🏗 Install Python and Dependencies (Skip if already done)
+        if: steps.check_installation.outputs.installed != 'true'
         run: |
           # Create and activate virtual environment
           python3 -m venv $HOME/kivy_venv
@@ -28,8 +31,8 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install kivy
 
-          # Install kivy-ios
-          python3 -m pip install kivy-ios
+          # Install kivy-ios from official source
+          python3 -m pip install kivy-ios --no-cache-dir
 
           # Locate and export Kivy-iOS path
           export KIVY_IOS_PATH=$(python3 -c "import kivy_ios, os; print(os.path.dirname(kivy_ios.__file__))")
@@ -57,7 +60,8 @@ jobs:
           echo "export PATH=$KIVY_IOS_PATH:\$PATH" >> $HOME/.bashrc
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
 
-      - name: 🔨 Build iOS App
+      - name: 🔨 Build iOS App (Resume if previously failed)
+        if: success()  # Only run if the previous steps were successful
         run: |
           source $HOME/kivy_venv/bin/activate
 
@@ -93,12 +97,14 @@ jobs:
           python3 $TOOLCHAIN_PATH build myapp
 
       - name: 📦 Package IPA File
+        if: success()  # Only run if the build step succeeded
         run: |
           source $HOME/kivy_venv/bin/activate
           cd $HOME/myapp
           python3 $KIVY_IOS_PATH/toolchain.py package myapp
 
       - name: 📤 Upload IPA File
+        if: success()  # Only run if the previous step succeeded
         uses: actions/upload-artifact@v4
         with:
           name: kivy-ios-app

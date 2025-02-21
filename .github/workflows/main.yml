@@ -44,7 +44,11 @@ jobs:
           fi
 
           # Build Python recipe first (necessary for Kivy and app builds)
-          python3 $TOOLCHAIN_PATH build python3
+          if [ ! -d "$HOME/kivy_venv/lib/python3.13/site-packages/kivy_ios/recipes/python3" ]; then
+            python3 $TOOLCHAIN_PATH build python3
+          else
+            echo "✅ Python3 recipe already built, skipping..."
+          fi
 
       - name: Create and Build iOS App
         run: |
@@ -53,12 +57,18 @@ jobs:
           # Check if the myapp directory exists; if not, create it
           if [ ! -d "myapp" ]; then
             python3 $TOOLCHAIN_PATH create myapp ./myapp
+          else
+            echo "✅ myapp directory already exists, skipping creation..."
           fi
           cd myapp
 
-          # Build Kivy and the App after Python is compiled
-          python3 $TOOLCHAIN_PATH build kivy
-          python3 $TOOLCHAIN_PATH build myapp
+          # Build Kivy and the App only if not already built
+          if [ ! -d "build" ]; then
+            python3 $TOOLCHAIN_PATH build kivy
+            python3 $TOOLCHAIN_PATH build myapp
+          else
+            echo "✅ Kivy and app already built, skipping build..."
+          fi
 
       - name: Export IPA File
         run: |

@@ -32,7 +32,7 @@ jobs:
           echo "export KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $HOME/.bashrc
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
 
-      - name: Build iOS App
+      - name: Build Python Recipe
         run: |
           source $HOME/kivy_venv/bin/activate
 
@@ -43,14 +43,20 @@ jobs:
             exit 1
           fi
 
-          # Create the app project if not already created
+          # Build Python recipe first (necessary for Kivy and app builds)
+          python3 $TOOLCHAIN_PATH build python3 --dir .
+
+      - name: Create and Build iOS App
+        run: |
+          source $HOME/kivy_venv/bin/activate
+
+          # Check if the myapp directory exists; if not, create it
           if [ ! -d "myapp" ]; then
             python3 $TOOLCHAIN_PATH create myapp ./myapp
           fi
           cd myapp
 
-          # Fix directory argument and build steps
-          python3 $TOOLCHAIN_PATH build python3 --dir .
+          # Build Kivy and the App after Python is compiled
           python3 $TOOLCHAIN_PATH build kivy --dir .
           python3 $TOOLCHAIN_PATH build myapp --dir .
 

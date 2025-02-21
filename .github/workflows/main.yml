@@ -9,11 +9,20 @@ jobs:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
+      - name: 🏗 Install System Dependencies
+        run: |
+          # Ensure Homebrew is available
+          brew update
+
+          # Install missing dependencies
+          brew install python3 autoconf automake libtool pkg-config
+
+          # Verify installations
+          autoconf --version || { echo "❌ autoconf not installed!"; exit 1; }
+          automake --version || { echo "❌ automake not installed!"; exit 1; }
+
       - name: 🏗 Install Python and Dependencies
         run: |
-          # Ensure Homebrew and Python are installed
-          brew install python3 || brew upgrade python3
-          
           # Create and activate virtual environment
           python3 -m venv $HOME/kivy_venv
           source $HOME/kivy_venv/bin/activate
@@ -22,7 +31,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install kivy kivy-ios
 
-          # Find and export Kivy-iOS path
+          # Locate and export Kivy-iOS path
           export KIVY_IOS_PATH=$(python3 -c "import kivy_ios, os; print(os.path.dirname(kivy_ios.__file__))")
 
           # Debug: Ensure kivy-ios is correctly installed
@@ -55,11 +64,10 @@ jobs:
           mkdir -p $HOME/myapp
           cd $HOME/myapp
 
-          # 🔧 Fix: Provide the correct directory argument
-          python3 $TOOLCHAIN_PATH create myapp $HOME/myapp
-
-          # Build dependencies and app
+          # 🔧 Fix: Ensure python3 recipe is compiled first
           python3 $TOOLCHAIN_PATH build python3
+
+          # Build Kivy and app
           python3 $TOOLCHAIN_PATH build kivy
           python3 $TOOLCHAIN_PATH build myapp
 

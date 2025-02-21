@@ -7,7 +7,7 @@ jobs:
     runs-on: macos-latest  # Uses a macOS machine for iOS builds
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4  # Latest version of checkout action
+        uses: actions/checkout@v4  # Latest version
 
       - name: Install Python and Dependencies
         run: |
@@ -18,13 +18,12 @@ jobs:
           source kivy_venv/bin/activate  # Activate venv
           python3 -m pip install --upgrade pip
           python3 -m pip install kivy kivy-ios
-          which kivy-ios  # Check kivy-ios path
-          echo "KIVY_IOS_PATH=$(which kivy-ios)" >> $GITHUB_ENV  # Persist kivy-ios path
+          which kivy-ios || echo "kivy-ios NOT found!"  # Debugging step
 
       - name: Build iOS App
         run: |
           source kivy_venv/bin/activate
-          $KIVY_IOS_PATH create myapp  # Use full path to kivy-ios
+          kivy-ios create myapp  # Use kivy-ios after confirming it's installed
           cd myapp
           TOOLCHAIN=toolchain.py
           python3 $TOOLCHAIN build python3 kivy
@@ -37,7 +36,7 @@ jobs:
           python3 $TOOLCHAIN package myapp
 
       - name: Upload IPA File
-        uses: actions/upload-artifact@v4  # Latest version
+        uses: actions/upload-artifact@v4
         with:
           name: kivy-ios-app
           path: myapp/bin/*.ipa

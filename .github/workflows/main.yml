@@ -1,0 +1,35 @@
+name: Build Kivy iOS App
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          brew install python3
+          pip3 install kivy kivy-ios
+
+      - name: Build iOS App
+        run: |
+          python3 -m pip install kivy-ios
+          kivy-ios create myapp
+          cd myapp
+          TOOLCHAIN=toolchain.py
+          python3 $TOOLCHAIN build python3 kivy
+          python3 $TOOLCHAIN build myapp
+
+      - name: Export IPA File
+        run: |
+          cd myapp
+          python3 $TOOLCHAIN package myapp
+
+      - name: Upload IPA File
+        uses: actions/upload-artifact@v2
+        with:
+          name: kivy-ios-app
+          path: myapp/bin/*.ipa

@@ -26,7 +26,10 @@ jobs:
 
           # Upgrade pip and install required dependencies
           python3 -m pip install --upgrade pip
-          python3 -m pip install kivy kivy-ios
+          python3 -m pip install kivy
+
+          # Install kivy-ios
+          python3 -m pip install kivy-ios
 
           # Locate and export Kivy-iOS path
           export KIVY_IOS_PATH=$(python3 -c "import kivy_ios, os; print(os.path.dirname(kivy_ios.__file__))")

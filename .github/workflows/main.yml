@@ -23,7 +23,7 @@ jobs:
         run: |
           brew install autoconf automake libtool
 
-      # ✅ Fix: Install 'sh' module before using kivy-ios
+      # ✅ Install required Python packages
       - name: Install Python Dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
@@ -32,6 +32,27 @@ jobs:
       - name: Clone Kivy iOS Repository
         run: |
           git clone https://github.com/kivy/kivy-ios.git
+
+      # ✅ Build Python3 FIRST before anything else
+      - name: Build Python3 for iOS
+        run: |
+          cd kivy-ios
+          python3 toolchain.py build python3
+
+      - name: Verify Python3 Recipe is Compiled
+        run: |
+          if [ ! -d "kivy-ios/dist/python3" ]; then
+            echo "❌ ERROR: Python3 was not compiled successfully!"
+            ls -la kivy-ios/dist  # Show contents of dist folder
+            exit 1
+          else
+            echo "✅ Python3 recipe is successfully compiled."
+          fi
+
+      - name: Build Kivy iOS dependencies
+        run: |
+          cd kivy-ios
+          python3 toolchain.py build kivy
 
       - name: Create iOS project
         run: |
@@ -50,11 +71,6 @@ jobs:
             ls -la kivy-ios  # Show what's inside kivy-ios
             exit 1
           fi
-
-      - name: Build Kivy iOS dependencies
-        run: |
-          cd kivy-ios
-          python3 toolchain.py build python3 kivy
 
       - name: Compile App for iOS
         run: |

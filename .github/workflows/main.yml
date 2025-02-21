@@ -38,11 +38,18 @@ jobs:
       - name: Build iOS App
         run: |
           source $HOME/kivy_venv/bin/activate
+      
+          # Create the app directory properly
           python3 -m kivy_ios.toolchain create myapp
           cd myapp
+      
+          # Set the correct TOOLCHAIN path
           TOOLCHAIN=$KIVY_IOS_PATH/toolchain.py
-          python3 $TOOLCHAIN build python3 kivy
-          python3 $TOOLCHAIN build myapp
+      
+          # Fix: Ensure toolchain.py is correctly used with required arguments
+          python3 $TOOLCHAIN build python3 --dir .
+          python3 $TOOLCHAIN build kivy --dir .
+          python3 $TOOLCHAIN build myapp --dir .
 
       - name: Export IPA File
         run: |

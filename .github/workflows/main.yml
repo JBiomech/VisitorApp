@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      # ✅ Fix: Install required dependencies
+      # ✅ Install required dependencies early
       - name: Install Required Build Tools
         run: |
           brew install autoconf automake libtool
@@ -40,15 +40,16 @@ jobs:
           cd kivy-ios
           python3 toolchain.py create visitor_app org.example.visitorapp
           echo "Checking directory structure after create..."
-          ls -la  # Debugging: See if app-ios exists
+          ls -la  # Debugging: See if visitor_app-ios exists
 
-      # ✅ Check if app-ios exists before continuing
-      - name: Verify app-ios directory
+      # ✅ Check if the correct directory exists BEFORE the build starts
+      - name: Verify iOS project directory
         run: |
-          if [ -d "kivy-ios/app-ios" ]; then
-            echo "✅ app-ios exists, proceeding..."
+          if [ -d "kivy-ios/visitor_app-ios" ]; then
+            echo "✅ visitor_app-ios exists, renaming to app-ios..."
+            mv kivy-ios/visitor_app-ios kivy-ios/app-ios
           else
-            echo "❌ ERROR: app-ios is missing!"
+            echo "❌ ERROR: visitor_app-ios is missing! Build cannot continue."
             ls -la kivy-ios  # Show what's inside kivy-ios
             exit 1
           fi

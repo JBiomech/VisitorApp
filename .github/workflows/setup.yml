@@ -27,9 +27,19 @@ jobs:
           source venv/bin/activate
           python3 -m pip list | grep -E "cython|kivy-ios"
 
+      - name: Debug Venv
+        run: |
+          ls -la  # List all files
+          if [ -d "venv" ]; then
+            echo "✅ Virtual environment exists!"
+          else
+            echo "❌ ERROR: venv not found!"
+            exit 1
+          fi
+
       - name: Upload Dependencies
         uses: actions/upload-artifact@v4
         with:
           name: setup-dependencies
-          path: venv
-          retention-days: 7
+          path: venv  # ✅ Ensure this matches where the virtual environment is stored
+          retention-days: 7  # ✅ Keep the artifact for up to 7 days

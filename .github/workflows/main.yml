@@ -7,16 +7,19 @@ jobs:
     runs-on: macos-latest  # Uses a macOS machine for iOS builds
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4  # Updated to latest version
+        uses: actions/checkout@v4  # Latest version of checkout action
 
-      - name: Install Dependencies
+      - name: Set up Python Environment
         run: |
           brew install python3
-          pip3 install kivy kivy-ios
+          python3 -m venv kivy_venv  # Create a virtual environment
+          source kivy_venv/bin/activate  # Activate the virtual environment
+          python3 -m pip install --upgrade pip  # Upgrade pip inside venv
+          python3 -m pip install kivy kivy-ios  # Install dependencies
 
       - name: Build iOS App
         run: |
-          python3 -m pip install kivy-ios
+          source kivy_venv/bin/activate  # Ensure virtual environment is used
           kivy-ios create myapp
           cd myapp
           TOOLCHAIN=toolchain.py
@@ -25,11 +28,12 @@ jobs:
 
       - name: Export IPA File
         run: |
+          source kivy_venv/bin/activate
           cd myapp
           python3 $TOOLCHAIN package myapp
 
       - name: Upload IPA File
-        uses: actions/upload-artifact@v4  # Updated to v4
+        uses: actions/upload-artifact@v4  # Latest version
         with:
           name: kivy-ios-app
           path: myapp/bin/*.ipa

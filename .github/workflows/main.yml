@@ -48,14 +48,30 @@ jobs:
 
           # Create the app project if not already created
           if [ ! -d "myapp" ]; then
-            python3 $TOOLCHAIN_PATH create myapp ./myapp
+            python3 $TOOLCHAIN_PATH create myapp
           fi
           cd myapp
 
-          # Build Python, Kivy, and the App (fixing directory argument)
-          python3 $TOOLCHAIN_PATH build python3 --dir .
-          python3 $TOOLCHAIN_PATH build kivy --dir .
-          python3 $TOOLCHAIN_PATH build myapp --dir .
+          # **Fix: Explicitly build Python first before anything else**
+          python3 $TOOLCHAIN_PATH build python3
+
+          # Check if Python3 was built successfully
+          if [ ! -d "$KIVY_IOS_PATH/recipes/python3" ]; then
+            echo "❌ Error: Python3 recipe was not compiled!"
+            exit 1
+          fi
+
+          # **Fix: Ensure Kivy is built before attempting app build**
+          python3 $TOOLCHAIN_PATH build kivy
+
+          # **Fix: Ensure myapp exists before building**
+          if [ ! -d "$KIVY_IOS_PATH/recipes/myapp" ]; then
+            echo "❌ Error: myapp recipe does not exist!"
+            exit 1
+          fi
+
+          # Now build the actual app
+          python3 $TOOLCHAIN_PATH build myapp
 
       - name: Export IPA File
         run: |

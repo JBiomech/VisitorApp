@@ -35,23 +35,27 @@ jobs:
       - name: Build iOS App
         run: |
           source $HOME/kivy_venv/bin/activate
-          TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
 
+          # Install missing dependencies
+          brew install autoconf automake libtool
+
+          # Verify Kivy-iOS installation path
+          TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
           if [ ! -f "$TOOLCHAIN_PATH" ]; then
             echo "❌ Error: toolchain.py not found at $TOOLCHAIN_PATH"
             exit 1
           fi
 
-          # Create the app properly
-          python3 $TOOLCHAIN_PATH create myapp ./myapp
+          # Create the app project if not already created
+          if [ ! -d "myapp" ]; then
+            python3 $TOOLCHAIN_PATH create myapp ./myapp
+          fi
           cd myapp
 
-          # Correct the toolchain directory argument syntax
+          # Build Python, Kivy, and the App (fixing directory argument)
           python3 $TOOLCHAIN_PATH build python3 --dir .
           python3 $TOOLCHAIN_PATH build kivy --dir .
           python3 $TOOLCHAIN_PATH build myapp --dir .
-
-        shell: bash
 
       - name: Export IPA File
         run: |

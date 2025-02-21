@@ -1,37 +1,39 @@
 name: Build Kivy iOS App
 
-on: [push]  # Runs the workflow when you push changes to GitHub
+on: [push]
 
 jobs:
   build:
-    runs-on: macos-latest  # Uses a macOS machine for iOS builds
+    runs-on: macos-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4  # Latest version of checkout action
+        uses: actions/checkout@v4
 
       - name: Install Python and Dependencies
         run: |
           brew install python3
-          python3 -m venv kivy_venv  # Create virtual environment
-          source kivy_venv/bin/activate  # Activate venv
+          python3 -m venv kivy_venv
+          source kivy_venv/bin/activate
           python3 -m pip install --upgrade pip
           python3 -m pip install kivy kivy-ios
-          
-          # Locate kivy-ios and add it to PATH
-          export KIVY_IOS_PATH=$(python3 -c "import shutil; print(shutil.which('kivy-ios'))")
+
+          # Locate kivy-ios manually and set it to PATH
+          export KIVY_IOS_PATH=$(find $HOME/kivy_venv -name "kivy-ios" -type f | head -n 1)
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
-          echo "Kivy-iOS is installed at: $KIVY_IOS_PATH"
+          echo "export PATH=$(dirname $KIVY_IOS_PATH):$PATH" >> $GITHUB_ENV
           
-          # If kivy-ios is not found, exit with an error
+          # Debugging: Print if kivy-ios was found
           if [ -z "$KIVY_IOS_PATH" ]; then
             echo "ERROR: kivy-ios not found after installation!"
             exit 1
+          else
+            echo "Kivy-iOS is installed at: $KIVY_IOS_PATH"
           fi
 
       - name: Build iOS App
         run: |
           source kivy_venv/bin/activate
-          $KIVY_IOS_PATH create myapp  # Use full path to kivy-ios
+          kivy-ios create myapp
           cd myapp
           TOOLCHAIN=toolchain.py
           python3 $TOOLCHAIN build python3 kivy

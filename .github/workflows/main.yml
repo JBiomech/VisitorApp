@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    # Trigger only if the YAML or code changes
-    paths:
-      - '**.yml'
 
 jobs:
   build:

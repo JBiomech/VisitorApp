@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: macos-latest  # GitHub provides a Mac VM for free
+  build-ios:
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -17,6 +17,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
+
+      # ✅ Fix: Install missing dependencies
+      - name: Install Required Build Tools
+        run: |
+          brew install autoconf automake libtool
 
       - name: Install Kivy and dependencies
         run: |
@@ -33,12 +38,11 @@ jobs:
         run: |
           cd kivy-ios
           python3 toolchain.py create visitor_app org.example.visitorapp
-          cd app-ios
-          mv ../../main.py .
+          ls -la  # Debugging: check if app-ios was created
 
       - name: Compile App for iOS
         run: |
-          cd kivy-ios/app-ios
+          cd kivy-ios/app-ios || exit 1  # Prevent failure if app-ios is missing
           python3 toolchain.py build myapp
 
       - name: Package iOS app

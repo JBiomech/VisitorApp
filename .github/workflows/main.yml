@@ -32,6 +32,18 @@ jobs:
           echo "export KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $HOME/.bashrc
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
 
+      - name: Create App Directory
+        run: |
+          source $HOME/kivy_venv/bin/activate
+
+          # Check if the app directory exists, if not, create it
+          if [ ! -d "myapp" ]; then
+            echo "❌ App not found. Creating app."
+            python3 $KIVY_IOS_PATH/toolchain.py create myapp ./myapp
+          else
+            echo "✅ App already exists. Skipping creation."
+          fi
+
       - name: Build Python Recipe if not found
         run: |
           source $HOME/kivy_venv/bin/activate
@@ -45,36 +57,30 @@ jobs:
             touch myapp/.python3-built # Mark Python build as completed
           fi
 
-      - name: Create and Build iOS App
+      - name: Build Kivy Recipe if not found
         run: |
           source $HOME/kivy_venv/bin/activate
 
-          # Check if the app directory exists, if not create it
-          if [ ! -d "myapp" ]; then
-            echo "❌ App not found. Creating app."
-            python3 $KIVY_IOS_PATH/toolchain.py create myapp ./myapp
+          # Check if Kivy is built, if not, build it
+          if [ -f "myapp/.kivy-built" ]; then
+            echo "✅ Kivy recipe already built. Skipping Kivy build."
           else
-            echo "✅ App already exists. Skipping creation."
-          fi
-
-          cd myapp
-
-          # Build Kivy and the app if needed
-          if [ ! -f ".kivy-built" ]; then
             echo "❌ Kivy build not found. Building Kivy recipe."
             python3 $KIVY_IOS_PATH/toolchain.py build kivy myapp
-            touch .kivy-built # Mark Kivy build as completed
-          else
-            echo "✅ Kivy recipe already built. Skipping Kivy build."
+            touch myapp/.kivy-built # Mark Kivy build as completed
           fi
 
-          # Build the app if it is not already built
-          if [ ! -f ".myapp-built" ]; then
+      - name: Build the App if not found
+        run: |
+          source $HOME/kivy_venv/bin/activate
+
+          # Check if the app is built, if not, build it
+          if [ -f "myapp/.myapp-built" ]; then
+            echo "✅ App already built. Skipping app build."
+          else
             echo "❌ App build not found. Building app."
             python3 $KIVY_IOS_PATH/toolchain.py build myapp myapp
-            touch .myapp-built # Mark app build as completed
-          else
-            echo "✅ App already built. Skipping app build."
+            touch myapp/.myapp-built # Mark app build as completed
           fi
 
       - name: Export IPA File

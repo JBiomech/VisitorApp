@@ -32,20 +32,22 @@ jobs:
           export KIVY_IOS_PATH=$(python3 -c "import kivy_ios, os; print(os.path.dirname(kivy_ios.__file__))")
 
           # Debug: Ensure kivy-ios is correctly installed
-          if [ ! -d "$KIVY_IOS_PATH" ]; then
-            echo "❌ ERROR: kivy-ios installation path is invalid: $KIVY_IOS_PATH"
-            exit 1
-          else
-            echo "✅ Kivy-iOS is installed at: $KIVY_IOS_PATH"
-          fi
+          echo "Kivy-iOS path: $KIVY_IOS_PATH"
+          ls -la $KIVY_IOS_PATH
 
           # Debug: Ensure toolchain.py exists
           TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
+          echo "Toolchain path: $TOOLCHAIN_PATH"
+          ls -la $KIVY_IOS_PATH
+
+          if [ ! -d "$KIVY_IOS_PATH" ]; then
+            echo "❌ ERROR: kivy-ios installation path is invalid: $KIVY_IOS_PATH"
+            exit 1
+          fi
+
           if [ ! -f "$TOOLCHAIN_PATH" ]; then
             echo "❌ ERROR: toolchain.py not found at $TOOLCHAIN_PATH"
             exit 1
-          else
-            echo "✅ Found toolchain.py at: $TOOLCHAIN_PATH"
           fi
 
           # Add kivy-ios to PATH and persist across steps
@@ -61,29 +63,31 @@ jobs:
 
           # Ensure toolchain.py is available
           TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
+          echo "Toolchain path: $TOOLCHAIN_PATH"
+          ls -la $KIVY_IOS_PATH  # List contents to check for toolchain.py
+
           if [ ! -f "$TOOLCHAIN_PATH" ]; then
             echo "❌ ERROR: toolchain.py not found at $TOOLCHAIN_PATH"
             exit 1
+          else
+            echo "✅ Found toolchain.py at: $TOOLCHAIN_PATH"
           fi
 
           # ✅ Ensure app directory exists and create inside the working directory
           mkdir -p $HOME/myapp
           cd $HOME/myapp
 
-          # 🔧 Fix: Ensure python3 recipe is compiled first
+          # 🔧 Ensure python3 recipe is compiled first
           python3 $TOOLCHAIN_PATH build python3
 
           # Build Kivy and app dependencies
           python3 $TOOLCHAIN_PATH build kivy
 
-          # 🔥 Fix: Manually create a recipe for your app before building
+          # 🔥 Manually create a recipe for your app before building
           python3 $TOOLCHAIN_PATH create myapp
 
-          # Now build the app
+          # Build the app
           python3 $TOOLCHAIN_PATH build myapp
-
-        env:
-          KIVY_IOS_PATH: ${{ env.KIVY_IOS_PATH }}
 
       - name: 📦 Package IPA File
         run: |

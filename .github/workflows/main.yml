@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allows manual triggering of the workflow
+  workflow_dispatch:  # Manual trigger for running the workflow
 
 jobs:
   build:
@@ -20,7 +20,7 @@ jobs:
           brew install python3 autoconf automake libtool pkg-config
           echo "::set-output name=installed::true"
 
-      - name: 🏗 Install Python and Dependencies (Skip if already done)
+      - name: 🏗 Create Virtual Environment and Install Python Dependencies
         if: steps.check_installation.outputs.installed != 'true'
         run: |
           # Create and activate virtual environment
@@ -63,6 +63,7 @@ jobs:
       - name: 🔨 Build iOS App (Resume if previously failed)
         if: success()  # Only run if the previous steps were successful
         run: |
+          # Ensure the virtual environment is activated
           source $HOME/kivy_venv/bin/activate
 
           # Ensure kivy-ios is installed
@@ -99,6 +100,7 @@ jobs:
       - name: 📦 Package IPA File
         if: success()  # Only run if the build step succeeded
         run: |
+          # Ensure the virtual environment is activated
           source $HOME/kivy_venv/bin/activate
           cd $HOME/myapp
           python3 $KIVY_IOS_PATH/toolchain.py package myapp

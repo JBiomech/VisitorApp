@@ -41,7 +41,7 @@ jobs:
             echo "✅ Python recipe already built. Skipping Python build."
           else
             echo "❌ Python build not found. Building Python recipe."
-            python3 $KIVY_IOS_PATH/toolchain.py build python3 --dir myapp
+            python3 $KIVY_IOS_PATH/toolchain.py build python3 myapp
             touch myapp/.python3-built # Mark Python build as completed
           fi
 
@@ -62,7 +62,7 @@ jobs:
           # Build Kivy and the app if needed
           if [ ! -f ".kivy-built" ]; then
             echo "❌ Kivy build not found. Building Kivy recipe."
-            python3 $KIVY_IOS_PATH/toolchain.py build kivy --dir .
+            python3 $KIVY_IOS_PATH/toolchain.py build kivy myapp
             touch .kivy-built # Mark Kivy build as completed
           else
             echo "✅ Kivy recipe already built. Skipping Kivy build."
@@ -70,7 +70,7 @@ jobs:
 
           # Build the app
           echo "❌ Building the app."
-          python3 $KIVY_IOS_PATH/toolchain.py build myapp --dir .
+          python3 $KIVY_IOS_PATH/toolchain.py build myapp myapp
 
       - name: Export IPA File
         run: |

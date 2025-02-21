@@ -11,10 +11,7 @@ jobs:
 
       - name: 🏗 Install System Dependencies
         run: |
-          # Ensure Homebrew is available
           brew update
-
-          # Install missing dependencies
           brew install python3 autoconf automake libtool pkg-config
 
           # Verify installations
@@ -67,8 +64,13 @@ jobs:
           # 🔧 Fix: Ensure python3 recipe is compiled first
           python3 $TOOLCHAIN_PATH build python3
 
-          # Build Kivy and app
+          # Build Kivy and app dependencies
           python3 $TOOLCHAIN_PATH build kivy
+
+          # 🔥 Fix: Manually create a recipe for your app before building
+          python3 $TOOLCHAIN_PATH create myapp
+
+          # Now build the app
           python3 $TOOLCHAIN_PATH build myapp
 
         env:

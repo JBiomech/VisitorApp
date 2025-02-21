@@ -6,21 +6,32 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout Repository
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
+      - name: 🏗 Install System Dependencies
         run: |
-          brew install python3 autoconf automake libtool
+          brew update
+          brew install python3 autoconf automake libtool pkg-config
+
+          # Verify installations
+          autoconf --version || { echo "❌ autoconf not installed!"; exit 1; }
+          automake --version || { echo "❌ automake not installed!"; exit 1; }
+
+      - name: 🏗 Install Python and Dependencies
+        run: |
+          # Create and activate virtual environment
           python3 -m venv $HOME/kivy_venv
           source $HOME/kivy_venv/bin/activate
+
+          # Upgrade pip and install required dependencies
           python3 -m pip install --upgrade pip
           python3 -m pip install kivy kivy-ios
 
-          # Find kivy-ios path dynamically
+          # Locate and export Kivy-iOS path
           export KIVY_IOS_PATH=$(python3 -c "import kivy_ios, os; print(os.path.dirname(kivy_ios.__file__))")
 
-          # Debugging: Ensure kivy-ios is found
+          # Debug: Ensure kivy-ios is correctly installed
           if [ ! -d "$KIVY_IOS_PATH" ]; then
             echo "❌ ERROR: kivy-ios installation path is invalid: $KIVY_IOS_PATH"
             exit 1
@@ -28,69 +39,51 @@ jobs:
             echo "✅ Kivy-iOS is installed at: $KIVY_IOS_PATH"
           fi
 
-          # Persist environment variables
-          echo "export KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $HOME/.bashrc
+          # Add kivy-ios to PATH and persist across steps
+          echo "export PATH=$KIVY_IOS_PATH:\$PATH" >> $HOME/.bashrc
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
 
-      - name: Create App Directory
+      - name: 🔨 Build iOS App
         run: |
           source $HOME/kivy_venv/bin/activate
 
-          # Check if the app directory exists, if not, create it
-          if [ ! -d "myapp" ]; then
-            echo "❌ App not found. Creating app."
-            python3 $KIVY_IOS_PATH/toolchain.py create myapp ./myapp
-          else
-            echo "✅ App already exists. Skipping creation."
+          # Ensure kivy-ios is installed
+          python3 -m pip show kivy-ios || { echo "❌ kivy-ios is missing!"; exit 1; }
+
+          # Locate toolchain.py
+          TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
+          if [ ! -f "$TOOLCHAIN_PATH" ]; then
+            echo "❌ ERROR: toolchain.py not found at $TOOLCHAIN_PATH"
+            exit 1
           fi
 
-      - name: Build Python Recipe if not found
+          # ✅ Ensure app directory exists and create inside the working directory
+          mkdir -p $HOME/myapp
+          cd $HOME/myapp
+
+          # 🔧 Fix: Ensure python3 recipe is compiled first
+          python3 $TOOLCHAIN_PATH build python3
+
+          # Build Kivy and app dependencies
+          python3 $TOOLCHAIN_PATH build kivy
+
+          # 🔥 Fix: Manually create a recipe for your app before building
+          python3 $TOOLCHAIN_PATH create myapp
+
+          # Now build the app
+          python3 $TOOLCHAIN_PATH build myapp
+
+        env:
+          KIVY_IOS_PATH: /Users/runner/kivy_venv/lib/python3.13/site-packages/kivy_ios
+
+      - name: 📦 Package IPA File
         run: |
           source $HOME/kivy_venv/bin/activate
-
-          # Check if the Python build exists, if it does, skip the build
-          if [ -f "myapp/.python3-built" ]; then
-            echo "✅ Python recipe already built. Skipping Python build."
-          else
-            echo "❌ Python build not found. Building Python recipe."
-            python3 $KIVY_IOS_PATH/toolchain.py build python3 myapp
-            touch myapp/.python3-built # Mark Python build as completed
-          fi
-
-      - name: Build Kivy Recipe if not found
-        run: |
-          source $HOME/kivy_venv/bin/activate
-
-          # Check if Kivy is built, if not, build it
-          if [ -f "myapp/.kivy-built" ]; then
-            echo "✅ Kivy recipe already built. Skipping Kivy build."
-          else
-            echo "❌ Kivy build not found. Building Kivy recipe."
-            python3 $KIVY_IOS_PATH/toolchain.py build kivy myapp
-            touch myapp/.kivy-built # Mark Kivy build as completed
-          fi
-
-      - name: Build the App if not found
-        run: |
-          source $HOME/kivy_venv/bin/activate
-
-          # Check if the app is built, if not, build it
-          if [ -f "myapp/.myapp-built" ]; then
-            echo "✅ App already built. Skipping app build."
-          else
-            echo "❌ App build not found. Building app."
-            python3 $KIVY_IOS_PATH/toolchain.py build myapp myapp
-            touch myapp/.myapp-built # Mark app build as completed
-          fi
-
-      - name: Export IPA File
-        run: |
-          source $HOME/kivy_venv/bin/activate
-          cd myapp
+          cd $HOME/myapp
           python3 $KIVY_IOS_PATH/toolchain.py package myapp
 
-      - name: Upload IPA File
+      - name: 📤 Upload IPA File
         uses: actions/upload-artifact@v4
         with:
           name: kivy-ios-app
-          path: myapp/bin/*.ipa
+          path: $HOME/myapp/bin/*.ipa

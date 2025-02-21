@@ -23,16 +23,23 @@ jobs:
         run: |
           brew install autoconf automake libtool
 
-      # ✅ Create iOS project before any long build step
-      - name: Create iOS project
+      # ✅ Fix: Install 'sh' module before using kivy-ios
+      - name: Install Python Dependencies
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip3 install Cython kivy kivy-ios sh
+
+      - name: Clone Kivy iOS Repository
         run: |
           git clone https://github.com/kivy/kivy-ios.git
+
+      - name: Create iOS project
+        run: |
           cd kivy-ios
           python3 toolchain.py create visitor_app org.example.visitorapp
           echo "Checking directory structure after create..."
           ls -la  # Debugging: See if visitor_app-ios exists
 
-      # ✅ Check if the iOS project directory exists BEFORE the build
       - name: Verify iOS project directory
         run: |
           if [ -d "kivy-ios/visitor_app-ios" ]; then
@@ -43,12 +50,6 @@ jobs:
             ls -la kivy-ios  # Show what's inside kivy-ios
             exit 1
           fi
-
-      # ✅ Proceed with dependency installation and building
-      - name: Install Kivy and dependencies
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          pip3 install Cython kivy kivy-ios
 
       - name: Build Kivy iOS dependencies
         run: |

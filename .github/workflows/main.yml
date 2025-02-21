@@ -6,24 +6,26 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout Repository
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Python and Dependencies
+      - name: 🏗 Install Python and Dependencies
         run: |
-          brew install python3
-
-          # Ensure virtual environment exists
+          # Ensure Homebrew and Python are installed
+          brew install python3 || brew upgrade python3
+          
+          # Create and activate virtual environment
           python3 -m venv $HOME/kivy_venv
           source $HOME/kivy_venv/bin/activate
 
+          # Upgrade pip and install required dependencies
           python3 -m pip install --upgrade pip
           python3 -m pip install kivy kivy-ios
 
-          # Manually find and set the correct kivy-ios path
+          # Find and export Kivy-iOS path
           export KIVY_IOS_PATH=$(python3 -c "import kivy_ios, os; print(os.path.dirname(kivy_ios.__file__))")
 
-          # Debugging: Ensure kivy-ios is found
+          # Debug: Ensure kivy-ios is correctly installed
           if [ ! -d "$KIVY_IOS_PATH" ]; then
             echo "❌ ERROR: kivy-ios installation path is invalid: $KIVY_IOS_PATH"
             exit 1
@@ -31,33 +33,43 @@ jobs:
             echo "✅ Kivy-iOS is installed at: $KIVY_IOS_PATH"
           fi
 
-          # Add kivy-ios to PATH
-          echo "export PATH=$KIVY_IOS_PATH:$PATH" >> $HOME/.bashrc
+          # Add kivy-ios to PATH and persist across steps
+          echo "export PATH=$KIVY_IOS_PATH:\$PATH" >> $HOME/.bashrc
           echo "KIVY_IOS_PATH=$KIVY_IOS_PATH" >> $GITHUB_ENV
 
-      - name: Build iOS App
+      - name: 🔨 Build iOS App
         run: |
           source $HOME/kivy_venv/bin/activate
-      
-          # Create the app directory properly
-          python3 -m kivy_ios.toolchain create myapp
-          cd myapp
-      
-          # Set the correct TOOLCHAIN path
-          TOOLCHAIN=$KIVY_IOS_PATH/toolchain.py
-      
-          # Fix: Ensure toolchain.py is correctly used with required arguments
-          python3 $TOOLCHAIN build python3 --dir .
-          python3 $TOOLCHAIN build kivy --dir .
-          python3 $TOOLCHAIN build myapp --dir .
 
-      - name: Export IPA File
+          # Ensure kivy-ios is installed
+          python3 -m pip show kivy-ios || { echo "❌ kivy-ios is missing!"; exit 1; }
+
+          # Locate toolchain.py
+          TOOLCHAIN_PATH="$KIVY_IOS_PATH/toolchain.py"
+          if [ ! -f "$TOOLCHAIN_PATH" ]; then
+            echo "❌ ERROR: toolchain.py not found at $TOOLCHAIN_PATH"
+            exit 1
+          fi
+
+          # Create project directory properly
+          python3 $TOOLCHAIN_PATH create myapp
+          cd myapp
+
+          # Build dependencies and app
+          python3 $TOOLCHAIN_PATH build python3
+          python3 $TOOLCHAIN_PATH build kivy
+          python3 $TOOLCHAIN_PATH build myapp
+
+        env:
+          KIVY_IOS_PATH: /Users/runner/kivy_venv/lib/python3.13/site-packages/kivy_ios
+
+      - name: 📦 Package IPA File
         run: |
           source $HOME/kivy_venv/bin/activate
           cd myapp
-          python3 $TOOLCHAIN package myapp
+          python3 $KIVY_IOS_PATH/toolchain.py package myapp
 
-      - name: Upload IPA File
+      - name: 📤 Upload IPA File
         uses: actions/upload-artifact@v4
         with:
           name: kivy-ios-app
